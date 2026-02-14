@@ -64,10 +64,9 @@ const getProducts = async (req, res) => {
 
 const getProductsByCategory = async (req, res) => {
   try {
-    const { slug } = req.params;
-    // console.log(slug);
+    const { mainslug, slug } = req.params;
 
-    const products = await repositoryProducts.listProductsByCategory(slug, req.query);
+    const products = await repositoryProducts.listProductsByCategory(mainslug, slug, req.query);
     // console.log(products);
     if (products) {
       res.status(HttpCode.OK).json({

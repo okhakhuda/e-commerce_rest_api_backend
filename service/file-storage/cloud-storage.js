@@ -1,6 +1,5 @@
 import { v2 as cloudinary } from 'cloudinary';
 import { promisify } from 'util';
-import { unlink } from 'fs/promises';
 
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
@@ -8,21 +7,6 @@ cloudinary.config({
   api_secret: process.env.CLOUD_API_SECRET,
   secure: true,
 });
-
-// const save = async (cloudFolders, filePath, ownerId) => {
-//   const idFileCloud = null
-//   const uploadCloud = promisify(cloudinary.uploader.upload)
-
-//   const { public_id: returnedIdFileCloud, secure_url: fileUrl } =
-//     await uploadCloud(filePath, {
-//       public_id: idFileCloud,
-//       folder: `${cloudFolders}/${ownerId}`,
-//     })
-
-//   await removeUploadFile(filePath)
-
-//   return {fileUrl, returnedIdFileCloud}
-// };
 
 const save = async (cloudFolders, fileBuffer, fileName, ownerId) => {
   return new Promise((resolve, reject) => {
@@ -48,14 +32,6 @@ const save = async (cloudFolders, fileBuffer, fileName, ownerId) => {
     uploadStream.end(fileBuffer);
   });
 };
-
-// const removeUploadFile = async filePath => {
-//   try {
-//     await unlink(filePath);
-//   } catch (error) {
-//     console.error(error.message);
-//   }
-// };
 
 const removeFiles = async idFileCloud => {
   const deleteFiles = promisify(cloudinary.uploader.destroy);

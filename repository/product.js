@@ -59,12 +59,18 @@ const listProducts = async ({ sortBy, sortByDesc, filter, limit = 10, skip = 0 }
 };
 
 const listProductsByCategory = async (
+  mainsSlug,
   slug,
   { sortBy, sortByDesc, filter, limit = 10, skip = 0 },
 ) => {
   const category = await Category.find({ slug: slug });
-  const total = await Product.find({ category: category[0].id }).countDocuments();
-  let result = Product.find({ category: category[0].id })
+  const genderCat = await GenderCategory.find({ slug: mainsSlug });
+
+  const total = await Product.find({
+    genderCategory: genderCat[0].id,
+    category: category[0].id,
+  }).countDocuments();
+  let result = Product.find({ genderCategory: genderCat[0].id, category: category[0].id })
     .sort({ updatedAt: 1 })
     .populate([
       {

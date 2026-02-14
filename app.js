@@ -20,7 +20,6 @@ app.use(logger(formatsLogger));
 app.use(cors());
 app.use(express.json({ limit: LIMIT_JSON }));
 app.use(express.static(process.env.UPLOAD_DIR));
-// app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/gendercategories', genderCategotriesRouter);
 app.use('/api/categories', categoriesRouter);

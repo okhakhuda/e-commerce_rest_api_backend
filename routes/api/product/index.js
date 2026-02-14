@@ -21,7 +21,7 @@ const router = new Router();
 router.get('/allProducts', getAllProducts);
 router.get('/newproducts', getNewProducts);
 router.get('/list/', getProducts);
-router.get('/category/:slug', getProductsByCategory);
+router.get('/category/:mainslug/:slug', getProductsByCategory);
 router.get('/genderCategory/:slug', getProductsByGenderCategory);
 router.post('/', [guard, roleAccess(Role.ADMIN)], upload.array('image', 10), addProduct);
 router.get('/:id', getProductById);
