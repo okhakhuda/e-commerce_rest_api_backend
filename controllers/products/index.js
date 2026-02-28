@@ -26,7 +26,7 @@ const getAllProducts = async (req, res) => {
 const getNewProducts = async (req, res) => {
   try {
     const products = await repositoryProducts.getNewProducts();
-    // console.log('newproducts', products);
+    
     if (products) {
       return res.status(HttpCode.OK).json({
         status: 'success',
@@ -65,6 +65,7 @@ const getProducts = async (req, res) => {
 const getProductsByCategory = async (req, res) => {
   try {
     const { mainslug, slug } = req.params;
+    // console.log(req.params);
 
     const products = await repositoryProducts.listProductsByCategory(mainslug, slug, req.query);
     // console.log(products);
@@ -175,7 +176,7 @@ const getProductById = async (req, res, next) => {
 const removeProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
-    console.log(id);
+    // console.log(id);
 
     const product = await repositoryProducts.removeProduct(id);
     if (product) {

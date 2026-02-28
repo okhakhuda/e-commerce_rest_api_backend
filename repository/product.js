@@ -59,12 +59,15 @@ const listProducts = async ({ sortBy, sortByDesc, filter, limit = 10, skip = 0 }
 };
 
 const listProductsByCategory = async (
-  mainsSlug,
+  mainSlug,
   slug,
   { sortBy, sortByDesc, filter, limit = 10, skip = 0 },
 ) => {
+  // console.log(mainSlug);
   const category = await Category.find({ slug: slug });
-  const genderCat = await GenderCategory.find({ slug: mainsSlug });
+  const genderCat = await GenderCategory.find({ slug: mainSlug });
+  console.log(genderCat);
+  
 
   const total = await Product.find({
     genderCategory: genderCat[0].id,

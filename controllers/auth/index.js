@@ -15,7 +15,7 @@ const registration = async (req, res, next) => {
       res.status(HttpCode.CONFLICT).json({
         status: 'error',
         code: HttpCode.CONFLICT,
-        message: 'Користувач з таким телефоном або email вже існує',
+        message: '!!!! Користувач з таким телефоном або email вже існує',
       });
     }
 
