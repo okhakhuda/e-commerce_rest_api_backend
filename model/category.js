@@ -5,7 +5,8 @@ const CategorySchema = new Schema(
   {
     title: {
       type: String,
-      require: true,
+      required: [true, 'Title is required'],
+      trim: true,
     },
     image: { type: String },
     idFileCloud: {
@@ -14,13 +15,13 @@ const CategorySchema = new Schema(
     },
     slug: {
       type: String,
-      require: true,
+      required: [true, 'Slug is required'],
       unique: true,
     },
     genderCategory: {
       type: SchemaTypes.ObjectId,
       ref: 'genderCategory',
-      required: true,
+      required: [true, 'Gender category is required'],
     },
   },
   {

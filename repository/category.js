@@ -1,51 +1,49 @@
 import Category from '../model/category.js';
 import GenderCategory from '../model/genderCategory.js';
+import AppError from '../lib/AppError.js';
 
-const addCategory = async (categoryId, body) => {
-  const category = await Category.create({
-    ...body,
-    genderCategory: categoryId,
-  });
-  return category;
+const POPULATE_GENDER = { path: 'genderCategory', select: 'slug title' };
+
+const addCategory = async (genderCategoryId, body) => {
+  return Category.create({ ...body, genderCategory: genderCategoryId });
 };
 
 const getCategoryById = async id => {
-  const result = await Category.find({ _id: id });
-  return result;
+  const category = await Category.findById(id).populate(POPULATE_GENDER);
+  if (!category) throw AppError.notFound(`Category with id "${id}" not found`);
+  return category;
 };
 
 const updateFile = async (id, image, idFileCloud = null) => {
-  return await Category.findByIdAndUpdate({ _id: id }, { image, idFileCloud });
+  return Category.findByIdAndUpdate(id, { image, idFileCloud }, { new: true });
 };
 
-const removeCategory = async categoryId => {
-  const result = await Category.findOneAndDelete({ _id: categoryId });
-  return result;
+const removeCategory = async id => {
+  const category = await Category.findByIdAndDelete(id);
+  if (!category) throw AppError.notFound(`Category with id "${id}" not found`);
+  return category;
 };
 
-const updateCategory = async (categoryId, body) => {
-  const result = await Category.findByIdAndUpdate(categoryId, { ...body }, { new: true });
-  return result;
+const updateCategory = async (id, body) => {
+  const category = await Category.findByIdAndUpdate(id, body, { new: true });
+  if (!category) throw AppError.notFound(`Category with id "${id}" not found`);
+  return category;
 };
 
 const getCategories = async () => {
-  const result = await Category.find().sort({ updatedAt: 1 });
-  return result;
+  return Category.find().sort({ updatedAt: 1 }).populate(POPULATE_GENDER);
 };
 
 const getCategoryBySlugGenderCat = async slug => {
-  const category = await GenderCategory.find({ slug });
-  // console.log(category);
+  const genderCat = await GenderCategory.findOne({ slug });
+  if (!genderCat) throw AppError.notFound(`Gender category with slug "${slug}" not found`);
 
-  const categoryId = category[0].id;
+  const [total, items] = await Promise.all([
+    Category.countDocuments({ genderCategory: genderCat.id }),
+    Category.find({ genderCategory: genderCat.id }).populate(POPULATE_GENDER),
+  ]);
 
-  const total = await Category.countDocuments({ mainCategory: categoryId });
-
-  let result = await Category.find({ genderCategory: categoryId }).populate({
-    path: 'genderCategory',
-    select: 'slug title',
-  });
-  return { total, items: result };
+  return { total, items };
 };
 
 export default {

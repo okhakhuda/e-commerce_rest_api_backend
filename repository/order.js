@@ -1,62 +1,47 @@
 import Order from '../model/orders.js';
-import User from '../model/user.js';
+import AppError from '../lib/AppError.js';
+
+const USER_POPULATE = { path: 'userId', select: 'email firstName lastName phone avatarUrl' };
 
 const addOrder = async body => {
-  // console.log('body', body);
-
-  const product = await Order.create(body);
-  console.log('product', product);
-  return product;
+  return Order.create(body);
 };
 
 const bindOrderByUserId = async (guestOrders, userId) => {
-  await Order.updateMany(
-    { _id: { $in: guestOrders.map(order => order._id) } },
-    { $set: { userId: userId, isGuest: false } },
+  return Order.updateMany(
+    { _id: { $in: guestOrders.map(o => o._id) } },
+    { $set: { userId, isGuest: false } },
   );
 };
 
 const getAllOrders = async () => {
-  const orders = await Order.find({}).sort({ createdAt: -1 });
-
-  return orders;
+  return Order.find().sort({ createdAt: -1 });
 };
 
-// const getAllOrders = async () => {
-//   const orders = await Order.find({}).populate(
-//     'products.productId', // Заміна productId на products.productId
-//     'name color price image',
-//   );
-//   return orders;
-// };
-
 const getOrderById = async id => {
-  const order = await Order.findById(id).populate(
-    'userId',
-    'email name phone avatarUrl idAvatarCloud',
-  );
+  const order = await Order.findById(id).populate(USER_POPULATE);
+  if (!order) throw AppError.notFound(`Order with id "${id}" not found`);
   return order;
 };
 
 const updateOrder = async (id, body) => {
-  const order = await Order.findByIdAndUpdate(id, body, {
-    new: true,
-  }).populate('userId', 'email name phone avatarUrl idAvatarCloud');
+  const order = await Order.findByIdAndUpdate(id, body, { new: true }).populate(USER_POPULATE);
+  if (!order) throw AppError.notFound(`Order with id "${id}" not found`);
   return order;
 };
 
 const deleteOrder = async id => {
-  const order = await Order.findByIdAndDelete(id).populate(
-    'userId',
-    'email name phone avatarUrl idAvatarCloud',
-  );
+  const order = await Order.findByIdAndDelete(id).populate(USER_POPULATE);
+  if (!order) throw AppError.notFound(`Order with id "${id}" not found`);
   return order;
 };
 
 const getOrdersByUserId = async userId => {
-  console.log('userId', userId);
-  const orders = await Order.find({ userId }).sort({ createdAt: -1 });
-  return orders;
+  return Order.find({ userId }).sort({ createdAt: -1 });
+};
+
+const getOrdersByPhone = async phone => {
+  return Order.find({ 'user.phone': phone }).sort({ createdAt: -1 });
 };
 
 export default {
@@ -67,4 +52,5 @@ export default {
   updateOrder,
   deleteOrder,
   getOrdersByUserId,
+  getOrdersByPhone,
 };

@@ -1,43 +1,25 @@
 import User from '../model/user.js';
 
-const findById = async id => {
-  return await User.findById(id);
-};
+const findById = id => User.findById(id);
 
-const findByEmail = async email => {
-  return await User.findOne({ email });
-};
+const findByEmail = email => User.findOne({ email });
 
-const findByPhone = async phone => {
-  return await User.findOne({ phone });
-};
-const findByVerifyToken = async verificationToken => {
-  return await User.findOne({ verificationToken });
-};
+const findByPhone = phone => User.findOne({ phone });
+
+const findByVerifyToken = verificationToken => User.findOne({ verificationToken });
 
 const create = async body => {
   const user = new User(body);
-  return await user.save();
+  return user.save();
 };
 
-const updateToken = async (id, token) => {
-  return await User.updateOne({ _id: id }, { token });
-};
+const updateToken = (id, token) => User.updateOne({ _id: id }, { token });
 
-const updateVerify = async (id, status) => {
-  return await User.updateOne({ _id: id }, { verify: status, verificationToken: null });
-};
+const updateVerify = (id, status) =>
+  User.updateOne({ _id: id }, { verify: status, verificationToken: null });
 
-const updateAvatar = async (id, avatarUrl, idAvatarCloud = null) => {
-  return await User.findByIdAndUpdate({ _id: id }, { avatarUrl, idAvatarCloud });
-};
-
-// const updateFile =  async (id, image, idFileCloud = null) => {
-//   return await Category.findByIdAndUpdate(
-//       { _id: id },
-//       {image, idFileCloud}
-//   )
-// };
+const updateAvatar = (id, avatarUrl, idAvatarCloud = null) =>
+  User.findByIdAndUpdate(id, { avatarUrl, idAvatarCloud }, { new: true });
 
 export default {
   findById,

@@ -3,71 +3,64 @@ import { HttpCode } from '../../lib/constants.js';
 import cloudStorage from '../../service/file-storage/cloud-storage.js';
 import { EmailService, SenderNodemailer } from '../../service/email/index.js';
 import { CLOUD_AVATAR_FOLDER } from '../../lib/constants.js';
+import AppError from '../../lib/AppError.js';
+import catchAsync from '../../lib/catchAsync.js';
+import sendResponse from '../../lib/response.js';
 
-const uploadAvatar = async (req, res, next) => {
+const uploadAvatar = catchAsync(async (req, res) => {
   const file = req.file;
-  const { id: id } = req.user;
+  if (!file) throw AppError.badRequest('Avatar file is required');
 
-  await cloudStorage.removeFiles(req.user.idAvatarCloud);
+  const { id, idAvatarCloud } = req.user;
+
+  // Remove old avatar if it was stored in cloud
+  if (idAvatarCloud) {
+    await cloudStorage.removeFiles(idAvatarCloud).catch(() => {});
+  }
+
   const { fileUrl, returnedIdFileCloud } = await cloudStorage.save(
     CLOUD_AVATAR_FOLDER,
-    file.path,
+    file.buffer,
+    file.originalname,
     id,
   );
+
   const result = await repositoryUsers.updateAvatar(id, fileUrl, returnedIdFileCloud);
-  res.status(HttpCode.OK).json({ status: 'success', code: HttpCode.OK, data: result });
-};
+  return sendResponse(res, HttpCode.OK, { data: result });
+});
 
-const verifyUser = async (req, res, next) => {
-  try {
-    const verifyToken = req.params.verificationToken;
-    const userFromToken = await repositoryUsers.findByVerifyToken(verifyToken);
-    if (userFromToken) {
-      await repositoryUsers.updateVerify(userFromToken.id, true);
-      return res.status(HttpCode.OK).json({
-        status: 'success',
-        code: HttpCode.OK,
-        data: { message: 'Verification email sent' },
-      });
-    }
-  } catch (error) {
-    res.status(HttpCode.BAD_REQUEST).json({
-      status: 'error',
-      code: HttpCode.BAD_REQUEST,
-      message: error.message,
-    });
+const verifyUser = catchAsync(async (req, res) => {
+  const user = await repositoryUsers.findByVerifyToken(req.params.verificationToken);
+  if (!user) {
+    throw AppError.notFound('Verification token is invalid or has already been used');
   }
-};
+  await repositoryUsers.updateVerify(user.id, true);
+  return sendResponse(res, HttpCode.OK, { data: { message: 'Email verified successfully' } });
+});
 
-const repeatEmailForVerifyUser = async (req, res, next) => {
-  try {
-    const { email } = req.body;
-    const user = await repositoryUsers.findByEmail(email);
-    if (user) {
-      const { email, firstName, verificationToken } = user;
-      const emailService = new EmailService(process.env.NODE_ENV, new SenderNodemailer());
+const repeatEmailForVerifyUser = catchAsync(async (req, res) => {
+  const { email } = req.body;
+  if (!email) throw AppError.badRequest('Email is required');
 
-      const isSend = await emailService.sendVerifyEmail(email, firstName, verificationToken);
-      if (isSend) {
-        return res.status(HttpCode.OK).json({
-          status: 'success',
-          code: HttpCode.OK,
-          data: { message: 'Success' },
-        });
-      }
-      res.status(HttpCode.SE).json({
-        status: 'error',
-        code: HttpCode.SE,
-        message: 'missing required field email',
-      });
-    }
-  } catch (error) {
-    res.status(HttpCode.NOT_FOUND).json({
-      status: 'error',
-      code: HttpCode.NOT_FOUND,
-      message: 'User with email not found',
-    });
+  const user = await repositoryUsers.findByEmail(email);
+  if (!user) throw AppError.notFound('User with this email not found');
+
+  if (user.verify) {
+    throw AppError.badRequest('Email is already verified');
   }
-};
+
+  const emailService = new EmailService(process.env.NODE_ENV, new SenderNodemailer());
+  const isSend = await emailService.sendVerifyEmail(
+    user.email,
+    user.firstName,
+    user.verificationToken,
+  );
+
+  if (!isSend) {
+    throw AppError.create('Failed to send verification email', HttpCode.SERVICE_UNAVAILABLE);
+  }
+
+  return sendResponse(res, HttpCode.OK, { data: { message: 'Verification email sent' } });
+});
 
 export { uploadAvatar, verifyUser, repeatEmailForVerifyUser };

@@ -1,33 +1,37 @@
-import GenderCategories from '../model/genderCategory.js';
+import GenderCategory from '../model/genderCategory.js';
+import AppError from '../lib/AppError.js';
+
+// BUG FIX: was GenderCategories.find({_id}) everywhere — same array-vs-document bug
+// as in category repository. Replaced with findById / findOne throughout.
 
 const addGenderCategory = async body => {
-  const category = await GenderCategories.create(body);
-  return category;
+  return GenderCategory.create(body);
 };
 
 const getGenderCategories = async () => {
-  const result = await GenderCategories.find().sort({ updatedAt: 1 });
-
-  return result;
+  return GenderCategory.find().sort({ updatedAt: 1 });
 };
 
 const getGenderCategoryById = async id => {
-  const result = await GenderCategories.find({ _id: id });
-  return result;
+  const category = await GenderCategory.findById(id);
+  if (!category) throw AppError.notFound(`Gender category with id "${id}" not found`);
+  return category;
 };
 
-const removeGenderCategory = async categoryId => {
-  const result = await GenderCategories.findOneAndDelete({ _id: categoryId });
-  return result;
+const removeGenderCategory = async id => {
+  const category = await GenderCategory.findByIdAndDelete(id);
+  if (!category) throw AppError.notFound(`Gender category with id "${id}" not found`);
+  return category;
 };
 
-const updateGenderCategory = async (categoryId, body) => {
-  const result = await GenderCategories.findByIdAndUpdate(categoryId, { ...body }, { new: true });
-  return result;
+const updateGenderCategory = async (id, body) => {
+  const category = await GenderCategory.findByIdAndUpdate(id, body, { new: true });
+  if (!category) throw AppError.notFound(`Gender category with id "${id}" not found`);
+  return category;
 };
 
 const updateFile = async (id, image, idFileCloud = null) => {
-  return await GenderCategories.findByIdAndUpdate({ _id: id }, { image, idFileCloud });
+  return GenderCategory.findByIdAndUpdate(id, { image, idFileCloud }, { new: true });
 };
 
 export default {

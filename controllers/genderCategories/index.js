@@ -1,180 +1,75 @@
 import repositoryGenderCategories from '../../repository/genderCategory.js';
-import { HttpCode } from '../../lib/constants.js';
-import convert from '../../convert.json' with { type: 'json' };
+import { HttpCode, CLOUD_GENDER_FOLDER } from '../../lib/constants.js';
 import cloudStorage from '../../service/file-storage/cloud-storage.js';
-import { CLOUD_GENDER_FOLDER } from '../../lib/constants.js';
+import AppError from '../../lib/AppError.js';
+import catchAsync from '../../lib/catchAsync.js';
+import sendResponse from '../../lib/response.js';
+import { slugify } from '../../lib/slugify.js';
 
-const addGenderCategory = async (req, res) => {
-  try {
-    const file = req.file;
-    const text = req.body.title;
-    const str = text.replace(/[\s-]/g, '_').toLowerCase();
-    const newName = str
-      .split('')
-      .map(char => convert[char] || char)
-      .join('');
+const addGenderCategory = catchAsync(async (req, res) => {
+  const file = req.file;
+  if (!file) throw AppError.badRequest('Image file is required');
 
-    const newCategory = await repositoryGenderCategories.addGenderCategory({
-      ...req.body,
-      slug: newName,
-      image: file.path,
-    });
-    if (newCategory) {
-      const { fileUrl, returnedIdFileCloud } = await cloudStorage.save(
-        CLOUD_GENDER_FOLDER,
-        req.file.buffer,
-        req.file.originalname,
-        newCategory.id,
-      );
-      await repositoryGenderCategories.updateFile(newCategory.id, fileUrl, returnedIdFileCloud);
-      const result = await repositoryGenderCategories.getGenderCategoryById(newCategory.id);
-      if (fileUrl && result) {
-        return res.status(HttpCode.CREATED).json({
-          status: 'success',
-          code: HttpCode.CREATED,
-          message: 'Категорію успішно додано',
-          result,
-        });
-      }
-    }
-  } catch (error) {
-    res.status(HttpCode.NOT_FOUND).json({
-      status: 'error',
-      code: HttpCode.NOT_FOUND,
-      message: 'Щось пішло не так',
-    });
+  const slug = slugify(req.body.title);
+
+  const newCategory = await repositoryGenderCategories.addGenderCategory({
+    ...req.body,
+    slug,
+    image: file.path,
+  });
+
+  const { fileUrl, returnedIdFileCloud } = await cloudStorage.save(
+    CLOUD_GENDER_FOLDER,
+    file.buffer,
+    file.originalname,
+    newCategory.id,
+  );
+  await repositoryGenderCategories.updateFile(newCategory.id, fileUrl, returnedIdFileCloud);
+
+  const result = await repositoryGenderCategories.getGenderCategoryById(newCategory.id);
+  return sendResponse(res, HttpCode.CREATED, { message: 'Категорію успішно додано', result });
+});
+
+const getGenderCategories = catchAsync(async (req, res) => {
+  const categories = await repositoryGenderCategories.getGenderCategories();
+  return sendResponse(res, HttpCode.OK, { categories });
+});
+
+const getGenderCategoryById = catchAsync(async (req, res) => {
+  const category = await repositoryGenderCategories.getGenderCategoryById(req.params.id);
+  return sendResponse(res, HttpCode.OK, { category });
+});
+
+const removeGenderCategory = catchAsync(async (req, res) => {
+  const category = await repositoryGenderCategories.removeGenderCategory(req.params.id);
+  await cloudStorage.removeFiles(category.idFileCloud);
+  await cloudStorage.removeFolder(CLOUD_GENDER_FOLDER, category.id);
+  return sendResponse(res, HttpCode.OK, { message: 'Категорію успішно видалено', category });
+});
+
+const updateGenderCategory = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const file = req.file;
+  const slug = slugify(req.body.title);
+
+  if (file) {
+    const existing = await repositoryGenderCategories.getGenderCategoryById(id);
+    await cloudStorage.removeFiles(existing.idFileCloud);
+    const { fileUrl, returnedIdFileCloud } = await cloudStorage.save(
+      CLOUD_GENDER_FOLDER,
+      file.buffer,
+      file.originalname,
+      existing.id,
+    );
+    await repositoryGenderCategories.updateFile(existing.id, fileUrl, returnedIdFileCloud);
   }
-};
 
-const getGenderCategories = async (req, res, next) => {
-  try {
-    const categories = await repositoryGenderCategories.getGenderCategories();
-    if (categories) {
-      return res.status(HttpCode.OK).json({
-        status: 'success',
-        code: HttpCode.OK,
-        categories,
-      });
-    }
-  } catch (error) {
-    res.status(HttpCode.NOT_FOUND).json({
-      status: 'error',
-      code: HttpCode.NOT_FOUND,
-      message: 'Щось пішло не так',
-    });
-  }
-};
-
-const getGenderCategoryById = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-
-    const category = await repositoryGenderCategories.getGenderCategoryById(id);
-    if (category) {
-      return res.status(HttpCode.OK).json({
-        status: 'success',
-        code: HttpCode.OK,
-        category,
-      });
-    }
-  } catch (error) {
-    res.status(HttpCode.NOT_FOUND).json({
-      status: 'error',
-      code: HttpCode.NOT_FOUND,
-      message: 'Щось пішло не так',
-    });
-  }
-};
-
-const removeGenderCategory = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-
-    const category = await repositoryGenderCategories.removeGenderCategory(id);
-    if (category) {
-      const removeFiles = await cloudStorage.removeFiles(category.idFileCloud);
-      if (removeFiles) {
-        await cloudStorage.removeFolder(CLOUD_GENDER_FOLDER, category.id);
-      }
-      return res.status(HttpCode.OK).json({
-        status: 'success',
-        code: HttpCode.OK,
-        message: 'Категорію успішно видалено',
-        category,
-      });
-    }
-  } catch (error) {
-    res.status(HttpCode.NOT_FOUND).json({
-      status: 'error',
-      code: HttpCode.NOT_FOUND,
-      message: 'Щось пішло не так',
-    });
-  }
-};
-
-const updateGenderCategory = async (req, res, next) => {
-  try {
-    console.log(req.body);
-    console.log(req.file);
-    const { id } = req.params;
-    const file = req.file;
-    const text = req.body.title;
-    const str = text.replace(/[\s-]/g, '_').toLowerCase();
-    const newName = str
-      .split('')
-      .map(char => convert[char] || char)
-      .join('');
-
-    const genderCategory = await repositoryGenderCategories.getGenderCategoryById(id);
-
-    if (file && genderCategory) {
-      await cloudStorage.removeFiles(genderCategory[0].idFileCloud);
-      const { fileUrl, returnedIdFileCloud } = await cloudStorage.save(
-        CLOUD_GENDER_FOLDER,
-        req.file.buffer,
-        req.file.originalname,
-        genderCategory[0].id,
-      );
-      await repositoryGenderCategories.updateFile(
-        genderCategory[0].id,
-        fileUrl,
-        returnedIdFileCloud,
-      );
-      const updateCategory = await repositoryGenderCategories.updateGenderCategory(id, {
-        ...req.body,
-        slug: newName,
-        image: fileUrl,
-      });
-      if (updateCategory) {
-        return res.status(HttpCode.OK).json({
-          status: 'success',
-          code: HttpCode.OK,
-          message: 'Категорію успішно оновлено',
-          updateCategory,
-        });
-      }
-    }
-
-    const updateCategory = await repositoryGenderCategories.updateGenderCategory(id, {
-      ...req.body,
-      slug: newName,
-    });
-    if (updateCategory) {
-      return res.status(HttpCode.OK).json({
-        status: 'success',
-        code: HttpCode.OK,
-        message: 'Категорію успішно оновлено',
-        updateCategory,
-      });
-    }
-  } catch (error) {
-    res.status(HttpCode.NOT_FOUND).json({
-      status: 'error',
-      code: HttpCode.NOT_FOUND,
-      message: 'Щось пішло не так',
-    });
-  }
-};
+  const updateCategory = await repositoryGenderCategories.updateGenderCategory(id, {
+    ...req.body,
+    slug,
+  });
+  return sendResponse(res, HttpCode.OK, { message: 'Категорію успішно оновлено', updateCategory });
+});
 
 export {
   addGenderCategory,

@@ -1,28 +1,33 @@
 import mongoose from 'mongoose';
 const { Schema, SchemaTypes, model } = mongoose;
+import { generateCode } from '../lib/generateCode.js';
 
 const productsSchema = new Schema(
   {
     article: {
       type: String,
       required: [true, 'Set article for product'],
-      default: Math.random().toString().substr(2, 7),
+      default: () => generateCode(7),
       trim: true,
       unique: true,
     },
     name: {
       type: String,
       required: [true, 'Set name for product'],
+      trim: true,
     },
     quantity: {
       type: Number,
       default: null,
+      min: [0, 'Quantity cannot be negative'],
     },
     color: {
       type: String,
+      trim: true,
     },
     price: {
       type: Number,
+      min: [0, 'Price cannot be negative'],
     },
     description: {
       type: String,
@@ -42,16 +47,16 @@ const productsSchema = new Schema(
     category: {
       type: SchemaTypes.ObjectId,
       ref: 'category',
-      required: true,
+      required: [true, 'Category is required'],
     },
     genderCategory: {
       type: SchemaTypes.ObjectId,
       ref: 'genderCategory',
-      required: true,
+      required: [true, 'Gender category is required'],
     },
     slug: {
       type: String,
-      require: true,
+      required: [true, 'Slug is required'],
       unique: true,
     },
     updatedAt: {
@@ -79,9 +84,8 @@ productsSchema.pre('save', function (next) {
 });
 
 productsSchema.virtual('status').get(function () {
-  if (this.quantity <= 5) {
-    return 'Закінчення товару';
-  }
+  if (this.quantity === null || this.quantity === undefined) return 'Невідомо';
+  if (this.quantity <= 5) return 'Закінчення товару';
   return 'Є в наявності';
 });
 

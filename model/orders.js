@@ -1,13 +1,12 @@
 import mongoose from 'mongoose';
 const { Schema, SchemaTypes, model } = mongoose;
+import { generateCode } from '../lib/generateCode.js';
 
 const orderSchema = new Schema(
   {
     orderNumber: {
       type: String,
-      default: function () {
-        return Math.random().toString().substr(2, 6);
-      },
+      default: () => generateCode(6),
       index: true,
       unique: true,
       sparse: true,
@@ -19,8 +18,8 @@ const orderSchema = new Schema(
         name: { type: String },
         size: { type: String },
         color: { type: String },
-        quantity: { type: Number },
-        price: { type: Number },
+        quantity: { type: Number, min: 1 },
+        price: { type: Number, min: 0 },
       },
     ],
     totalPrice: {
@@ -55,12 +54,7 @@ const orderSchema = new Schema(
         sparse: true,
         index: true,
         lowercase: true,
-        validate: {
-          validator: function (v) {
-            return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(v);
-          },
-          message: props => `${props.value} is not a valid email!`,
-        },
+        match: [/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, '{VALUE} is not a valid email'],
       },
     },
     address: {
