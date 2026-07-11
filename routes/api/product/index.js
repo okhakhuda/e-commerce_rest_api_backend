@@ -2,8 +2,7 @@ import { Router } from 'express';
 import {
   addProduct,
   getNewProducts,
-  getAllProducts,
-  getProducts,
+  getListProducts,
   getProductById,
   removeProduct,
   updateProduct,
@@ -18,9 +17,8 @@ import guard from '../../../middlewares/guard.js';
 
 const router = new Router();
 
-router.get('/allProducts', getAllProducts);
+router.get('/allProducts', getListProducts);
 router.get('/newproducts', getNewProducts);
-router.get('/list', getProducts);
 router.get('/category/:mainslug/:slug', getProductsByCategory);
 router.get('/genderCategory/:slug', getProductsByGenderCategory);
 router.post(

@@ -6,19 +6,14 @@ import catchAsync from '../../lib/catchAsync.js';
 import sendResponse from '../../lib/response.js';
 import { slugify } from '../../lib/slugify.js';
 
-const getAllProducts = catchAsync(async (req, res) => {
-  const products = await repositoryProducts.getAllProducts();
+const getListProducts = catchAsync(async (req, res) => {
+  const products = await repositoryProducts.listProducts(req.query);
   return sendResponse(res, HttpCode.OK, { products });
 });
 
 const getNewProducts = catchAsync(async (req, res) => {
   const products = await repositoryProducts.getNewProducts();
   return sendResponse(res, HttpCode.OK, { products });
-});
-
-const getProducts = catchAsync(async (req, res) => {
-  const data = await repositoryProducts.listProducts(req.query);
-  return sendResponse(res, HttpCode.OK, { data });
 });
 
 const getProductsByCategory = catchAsync(async (req, res) => {
@@ -105,11 +100,10 @@ const removeProductImage = catchAsync(async (req, res) => {
 });
 
 export {
-  getProducts,
   getNewProducts,
   getProductsByCategory,
   getProductsByGenderCategory,
-  getAllProducts,
+  getListProducts,
   addProduct,
   getProductById,
   removeProduct,

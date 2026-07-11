@@ -50,7 +50,7 @@ const login = catchAsync(async (req, res, next) => {
   const token = authService.getToken(user);
   await authService.setToken(user.id, token);
 
-  return sendResponse(res, HttpCode.OK, { data: { token } });
+  return sendResponse(res, HttpCode.OK, { token, user });
 });
 
 const logout = catchAsync(async (req, res, next) => {

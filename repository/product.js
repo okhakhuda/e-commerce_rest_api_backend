@@ -8,43 +8,34 @@ const POPULATE_CATS = [
   { path: 'category', select: 'slug title' },
 ];
 
-// Builds sort object from query params {sortBy, sortByDesc}
 const buildSort = (sortBy, sortByDesc) => {
   if (sortByDesc) return { [sortByDesc]: -1 };
   if (sortBy) return { [sortBy]: 1 };
   return { createdAt: -1 };
 };
 
-const getAllProducts = async () => {
-  const [total, data] = await Promise.all([
-    Product.countDocuments(),
-    Product.find().sort({ createdAt: -1 }).populate(POPULATE_CATS),
-  ]);
-  return { total, data };
+const listProducts = async ({ sortBy, sortByDesc, filter, limit, skip }) => {
+  const sort = buildSort(sortBy, sortByDesc);
+  let query = Product.find()
+    .sort(sort, { createdAt: -1 })
+    .limit(Number(limit))
+    .skip(Number(skip))
+    .populate(POPULATE_CATS);
+
+  if (filter) query = query.select(filter.split('&').join(' '));
+
+  const [total, data] = await Promise.all([Product.countDocuments(), query]);
+  return { total, limit: Number(limit), data };
 };
 
 const getNewProducts = async (count = 10) => {
   return Product.find().sort({ createdAt: -1 }).limit(count).populate(POPULATE_CATS);
 };
 
-const listProducts = async ({ sortBy, sortByDesc, filter, limit = 10, skip = 0 }) => {
-  const sort = buildSort(sortBy, sortByDesc);
-  let query = Product.find()
-    .sort(sort)
-    .limit(Number(limit))
-    .skip(Number(skip))
-    .populate(POPULATE_CATS);
-
-  if (filter) query = query.select(filter.split('|').join(' '));
-
-  const [total, products] = await Promise.all([Product.countDocuments(), query]);
-  return { total, limit: Number(limit), products };
-};
-
 const listProductsByCategory = async (
   mainSlug,
   slug,
-  { sortBy, sortByDesc, filter, limit = 10, skip = 0 },
+  { sortBy, sortByDesc, filter, limit, skip = 0 },
 ) => {
   const [genderCat, category] = await Promise.all([
     GenderCategory.findOne({ slug: mainSlug }),
@@ -58,11 +49,11 @@ const listProductsByCategory = async (
   const sort = buildSort(sortBy, sortByDesc);
 
   let query = Product.find(filter_)
-    .sort(sort)
+    .sort(sort, { createdAt: -1 })
     .limit(Number(limit))
     .skip(Number(skip))
     .populate(POPULATE_CATS);
-  if (filter) query = query.select(filter.split('|').join(' '));
+  if (filter) query = query.select(filter.split('&').join(' '));
 
   const [total, products] = await Promise.all([Product.countDocuments(filter_), query]);
   return { total, limit: Number(limit), products };
@@ -70,7 +61,7 @@ const listProductsByCategory = async (
 
 const listProductsByGenderCategory = async (
   slug,
-  { sortBy, sortByDesc, filter, limit = 10, skip = 0 },
+  { sortBy, sortByDesc, filter, limit, skip = 0 },
 ) => {
   const genderCat = await GenderCategory.findOne({ slug });
   if (!genderCat) throw AppError.notFound(`Gender category "${slug}" not found`);
@@ -79,11 +70,11 @@ const listProductsByGenderCategory = async (
   const sort = buildSort(sortBy, sortByDesc);
 
   let query = Product.find(filter_)
-    .sort(sort)
+    .sort(sort, { createdAt: -1 })
     .limit(Number(limit))
     .skip(Number(skip))
     .populate(POPULATE_CATS);
-  if (filter) query = query.select(filter.split('|').join(' '));
+  if (filter) query = query.select(filter.split('&').join(' '));
 
   const [total, products] = await Promise.all([Product.countDocuments(filter_), query]);
   return { total, limit: Number(limit), products };
@@ -120,7 +111,6 @@ export default {
   getNewProducts,
   listProductsByCategory,
   listProductsByGenderCategory,
-  getAllProducts,
   addProduct,
   getProductById,
   updateFile,

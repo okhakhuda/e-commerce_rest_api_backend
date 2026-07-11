@@ -14,8 +14,12 @@ const bindOrderByUserId = async (guestOrders, userId) => {
   );
 };
 
-const getAllOrders = async () => {
-  return Order.find().sort({ createdAt: -1 });
+const getAllOrders = async (limit, skip = 0) => {
+  const [total, data] = await Promise.all([
+    Order.countDocuments(),
+    Order.find().sort({ createdAt: -1 }).limit(Number(limit)).skip(Number(skip)),
+  ]);
+  return { total, limit: Number(limit), data };
 };
 
 const getOrderById = async id => {

@@ -43,7 +43,7 @@ const addOrder = catchAsync(async (req, res) => {
 });
 
 const getAllOrders = catchAsync(async (req, res) => {
-  const orders = await repositoryOrder.getAllOrders();
+  const orders = await repositoryOrder.getAllOrders(req.query.limit || 15, req.query.skip || 0);
   return sendResponse(res, HttpCode.OK, { orders });
 });
 
