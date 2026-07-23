@@ -22,7 +22,7 @@ class EmailService {
     const mailGenerator = new Mailgen({
       theme: 'default',
       product: {
-        name: 'My store',
+        name: 'VAB_WOMANS',
         link: this.link,
       },
     });
@@ -54,7 +54,6 @@ class EmailService {
     };
     try {
       await this.sender.send(msg);
-
       return true;
     } catch (error) {
       console.error(error.message);

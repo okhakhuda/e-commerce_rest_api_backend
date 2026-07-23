@@ -11,6 +11,7 @@ class SenderNodemailer {
         pass: process.env.PASSWORD_NODEMAILER,
       },
     };
+    // console.log('USER_NODEMAILER', process.env.USER_NODEMAILER);
     const transporter = nodemailer.createTransport(config);
     return await transporter.sendMail({
       ...msg,

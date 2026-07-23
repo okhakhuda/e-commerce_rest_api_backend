@@ -36,7 +36,7 @@ const registration = catchAsync(async (req, res, next) => {
   delete userData.verificationToken;
 
   return sendResponse(res, HttpCode.CREATED, {
-    data: { ...userData, token, isSendEmailVerify },
+    data: { ...userData, token },
   });
 });
 
@@ -59,7 +59,18 @@ const logout = catchAsync(async (req, res, next) => {
 });
 
 const currentUser = catchAsync(async (req, res, next) => {
-  const { email, phone, firstName, lastName, avatarUrl, role, id } = req.user;
+  const {
+    email,
+    phone,
+    firstName,
+    lastName,
+    avatarUrl,
+    role,
+    token,
+    id,
+    verify,
+    isSendEmailVerify,
+  } = req.user;
   // console.log('currentUser', req.user);
 
   const guestOrders = await Order.find({
@@ -73,7 +84,18 @@ const currentUser = catchAsync(async (req, res, next) => {
   }
 
   return sendResponse(res, HttpCode.OK, {
-    data: { email, phone, firstName, lastName, avatarUrl, role, id },
+    data: {
+      email,
+      phone,
+      firstName,
+      lastName,
+      avatarUrl,
+      role,
+      token,
+      id,
+      verify,
+      isSendEmailVerify,
+    },
   });
 });
 

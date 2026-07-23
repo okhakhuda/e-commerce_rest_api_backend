@@ -30,12 +30,16 @@ const uploadAvatar = catchAsync(async (req, res) => {
 });
 
 const verifyUser = catchAsync(async (req, res) => {
+  console.log('req', req.params);
   const user = await repositoryUsers.findByVerifyToken(req.params.verificationToken);
+  console.log('user', user);
   if (!user) {
-    throw AppError.notFound('Verification token is invalid or has already been used');
+    // throw AppError.notFound('Verification token is invalid or has already been used');
+    return res.redirect(`${process.env.FRONTEND_URL}/verify?status=error`);
   }
   await repositoryUsers.updateVerify(user.id, true);
-  return sendResponse(res, HttpCode.OK, { data: { message: 'Email verified successfully' } });
+  // return sendResponse(res, HttpCode.OK, { data: { message: 'Email verified successfully' } });
+  return res.redirect(`${process.env.FRONTEND_URL}/verify?status=success`);
 });
 
 const repeatEmailForVerifyUser = catchAsync(async (req, res) => {
@@ -60,7 +64,9 @@ const repeatEmailForVerifyUser = catchAsync(async (req, res) => {
     throw AppError.create('Failed to send verification email', HttpCode.SERVICE_UNAVAILABLE);
   }
 
-  return sendResponse(res, HttpCode.OK, { data: { message: 'Verification email sent' } });
+  return sendResponse(res, HttpCode.OK, {
+    data: { message: 'Verification email sent' },
+  });
 });
 
 export { uploadAvatar, verifyUser, repeatEmailForVerifyUser };
